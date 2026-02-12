@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: spa-booking
+  datasource:
+    url: jdbc:postgresql://localhost:5432/spa_booking
+    username: postgres
+    password: admin123
+    driver-class-name: org.postgresql.Driver
+
+
+
+  jpa:
+    hibernate:
+      ddl-auto: create     # hoặc: none | validate | create | create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # (Tùy chọn) Logging SQL rõ hơn trong console
+  logging:
+    level:
+      org.hibernate.SQL: DEBUG
+      org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+  Nội dung trong hình bạn gửi:
+
+  # Dùng để trỏ tới thư mục chứa các script Flyway
+  flyway:
+    locations: classpath:/db/migration,classpath:/dev/db/migration
+    # Phiên bản baseline sẽ = 1 và không thực hiện bất kỳ thay đổi nào trong DB
+    baseline-on-migrate: true
+    baseline-version: 0
+server:
+  port: 8080
