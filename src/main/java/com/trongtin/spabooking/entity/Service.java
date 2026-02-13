@@ -62,7 +62,7 @@ public class Service {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Relationships (sẽ thêm sau)
+    // Relationships
     @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<TherapistService> therapistServices = new ArrayList<>();
