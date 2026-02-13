@@ -1,4 +1,15 @@
-
+-- 1.2. Therapists (Độc lập hoàn toàn)
+CREATE TABLE therapists (
+    id BIGSERIAL PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) UNIQUE,
+    email VARCHAR(100) UNIQUE,
+    employee_code VARCHAR(20) UNIQUE NOT NULL,
+    avatar_url VARCHAR(500),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 CREATE TABLE users (
     -- Primary Key
     id BIGSERIAL PRIMARY KEY,
@@ -38,6 +49,8 @@ CREATE TABLE users (
     CONSTRAINT fk_preferred_therapist
         FOREIGN KEY (preferred_therapist_id) REFERENCES therapists(id)
 );
+
+
 
 CREATE TABLE services (
     -- Primary Key
@@ -80,46 +93,6 @@ CREATE TABLE services (
     deleted_at TIMESTAMP
 );
 
-CREATE TABLE booking_slots (
-    -- Primary Key
-    id BIGSERIAL PRIMARY KEY,
-
-    -- Foreign Keys
-    service_id BIGINT NOT NULL,
-    therapist_id BIGINT,  -- NULL = bất kỳ therapist nào
-
-    -- Thời gian
-    booking_date DATE NOT NULL,
-    booking_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-
-    -- Status
-    is_booked BOOLEAN DEFAULT false,
-    is_blocked BOOLEAN DEFAULT false,  -- Admin block slot này
-
-    -- Booking reference
-    booking_id BIGINT,
-
-    -- Admin notes
-    block_reason VARCHAR(500),  -- "Therapist nghỉ phép", "Bảo trì thiết bị"
-
-    -- Timestamps
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-
-    -- Foreign Keys Constraints
-    CONSTRAINT fk_slot_service
-        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
-    CONSTRAINT fk_slot_therapist
-        FOREIGN KEY (therapist_id) REFERENCES therapists(id) ON DELETE CASCADE,
-    CONSTRAINT fk_slot_booking
-        FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL,
-
-    -- *** CRITICAL: Unique constraint chống trùng lịch ***
-    CONSTRAINT unique_therapist_slot UNIQUE (
-        therapist_id, booking_date, booking_time
-    )
-);
 
 
 CREATE TABLE bookings (
@@ -189,6 +162,48 @@ CREATE TABLE bookings (
     CONSTRAINT chk_end_time
         CHECK (end_time > booking_time)
 );
+
+CREATE TABLE booking_slots (
+    -- Primary Key
+    id BIGSERIAL PRIMARY KEY,
+
+    -- Foreign Keys
+    service_id BIGINT NOT NULL,
+    therapist_id BIGINT,  -- NULL = bất kỳ therapist nào
+
+    -- Thời gian
+    booking_date DATE NOT NULL,
+    booking_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+
+    -- Status
+    is_booked BOOLEAN DEFAULT false,
+    is_blocked BOOLEAN DEFAULT false,  -- Admin block slot này
+
+    -- Booking reference
+    booking_id BIGINT,
+
+    -- Admin notes
+    block_reason VARCHAR(500),  -- "Therapist nghỉ phép", "Bảo trì thiết bị"
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    -- Foreign Keys Constraints
+    CONSTRAINT fk_slot_service
+        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+    CONSTRAINT fk_slot_therapist
+        FOREIGN KEY (therapist_id) REFERENCES therapists(id) ON DELETE CASCADE,
+    CONSTRAINT fk_slot_booking
+        FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL,
+
+    -- *** CRITICAL: Unique constraint chống trùng lịch ***
+    CONSTRAINT unique_therapist_slot UNIQUE (
+        therapist_id, booking_date, booking_time
+    )
+);
+
 
 
 CREATE TABLE activity_logs (
