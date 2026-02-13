@@ -1,3 +1,45 @@
+
+CREATE TABLE services (
+    -- Primary Key
+    id BIGSERIAL PRIMARY KEY,
+
+    -- Thông tin cơ bản
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    short_description VARCHAR(500),
+
+    -- Thông số dịch vụ
+    duration_minutes INTEGER NOT NULL,  -- 60, 90, 120
+    price DECIMAL(10, 2) NOT NULL,
+    discount_price DECIMAL(10, 2),
+
+    -- Media
+    image_url VARCHAR(500),
+    gallery_urls TEXT[],
+
+    -- Categorization
+    category VARCHAR(50),  -- BODY_MASSAGE, FOOT_MASSAGE, FACIAL, COMBO
+
+    -- Display & Status
+    is_active BOOLEAN DEFAULT true,
+    is_featured BOOLEAN DEFAULT false,
+    display_order INTEGER DEFAULT 0,
+
+    -- Booking constraints
+    max_bookings_per_day INTEGER DEFAULT 10,
+    advance_booking_days INTEGER DEFAULT 30,  -- Đặt trước tối đa bao nhiêu ngày
+    min_advance_hours INTEGER DEFAULT 2,      -- Đặt trước tối thiểu bao nhiêu giờ
+
+    -- Loyalty
+    loyalty_points_reward INTEGER DEFAULT 0,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    deleted_at TIMESTAMP
+);
+
 -- 1.2. Therapists (Độc lập hoàn toàn)
 CREATE TABLE therapists (
     id BIGSERIAL PRIMARY KEY,
@@ -9,6 +51,23 @@ CREATE TABLE therapists (
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE therapist_services (
+    id BIGSERIAL PRIMARY KEY,
+    therapist_id BIGINT NOT NULL,
+    service_id BIGINT NOT NULL,
+    skill_level VARCHAR(20) DEFAULT 'INTERMEDIATE',
+    years_experience INTEGER DEFAULT 0,
+    is_primary_service BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT fk_ts_therapist FOREIGN KEY (therapist_id)
+        REFERENCES therapists(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ts_service FOREIGN KEY (service_id)
+        REFERENCES services(id) ON DELETE CASCADE,
+    CONSTRAINT unique_therapist_service UNIQUE (therapist_id, service_id)
 );
 CREATE TABLE users (
     -- Primary Key
@@ -51,47 +110,6 @@ CREATE TABLE users (
 );
 
 
-
-CREATE TABLE services (
-    -- Primary Key
-    id BIGSERIAL PRIMARY KEY,
-
-    -- Thông tin cơ bản
-    name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT,
-    short_description VARCHAR(500),
-
-    -- Thông số dịch vụ
-    duration_minutes INTEGER NOT NULL,  -- 60, 90, 120
-    price DECIMAL(10, 2) NOT NULL,
-    discount_price DECIMAL(10, 2),
-
-    -- Media
-    image_url VARCHAR(500),
-    gallery_urls TEXT[],
-
-    -- Categorization
-    category VARCHAR(50),  -- BODY_MASSAGE, FOOT_MASSAGE, FACIAL, COMBO
-
-    -- Display & Status
-    is_active BOOLEAN DEFAULT true,
-    is_featured BOOLEAN DEFAULT false,
-    display_order INTEGER DEFAULT 0,
-
-    -- Booking constraints
-    max_bookings_per_day INTEGER DEFAULT 10,
-    advance_booking_days INTEGER DEFAULT 30,  -- Đặt trước tối đa bao nhiêu ngày
-    min_advance_hours INTEGER DEFAULT 2,      -- Đặt trước tối thiểu bao nhiêu giờ
-
-    -- Loyalty
-    loyalty_points_reward INTEGER DEFAULT 0,
-
-    -- Timestamps
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    deleted_at TIMESTAMP
-);
 
 
 
@@ -447,19 +465,5 @@ CREATE TABLE reviews (
         )
 );
 
--- Bảng trung gian đơn giản
-CREATE TABLE therapist_services (
-    id BIGSERIAL PRIMARY KEY,
-    therapist_id BIGINT NOT NULL,
-    service_id BIGINT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
 
-    -- Foreign keys
-    CONSTRAINT fk_therapist
-        FOREIGN KEY (therapist_id) REFERENCES therapists(id) ON DELETE CASCADE,
-    CONSTRAINT fk_service
-        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
 
-    -- Unique: 1 therapist không thể có 2 dòng giống nhau với 1 service
-    CONSTRAINT unique_therapist_service UNIQUE (therapist_id, service_id)
-);
