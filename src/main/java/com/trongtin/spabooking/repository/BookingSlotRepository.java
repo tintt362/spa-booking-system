@@ -22,7 +22,7 @@ public interface BookingSlotRepository extends JpaRepository<BookingSlot, Long> 
     @Query("""
             SELECT s FROM BookingSlot s 
             WHERE s.service.id = :serviceId
-            AND (:therapistId IS NULL OR s.therapistId = :therapistId)
+            AND (:therapistId IS NULL OR s.therapist.id = :therapistId)
             AND s.bookingDate = :bookingDate
             AND s.bookingTime = :bookingTime
             AND s.isBooked = false
