@@ -8,6 +8,7 @@ import com.trongtin.spabooking.exception.BookingException;
 import com.trongtin.spabooking.exception.ResourceNotFoundException;
 import com.trongtin.spabooking.mapper.BookingMapper;
 import com.trongtin.spabooking.repository.*;
+import com.trongtin.spabooking.service.async.AsyncBookingService;
 import com.trongtin.spabooking.service.validartor.*;
 import com.trongtin.spabooking.util.*;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,7 @@ public class BookingServiceImpl implements BookingService {
     private final TimeCalculator timeCalculator;
     private final BookingMapper mapper;
 
+    private final AsyncBookingService asyncBookingService; // ADD THIS
 
     // Create anonymous booking
     @Override
@@ -123,9 +125,13 @@ public class BookingServiceImpl implements BookingService {
                 "Khách hàng tạo booking (ẩn danh)"
         );
 
-        // STEP 10: Return response immediately (~10ms)
-        // Note: Async jobs (email, SMS) will be triggered
 
+        // Note: Async jobs (email, SMS) will be triggered
+        // STEP 10: Trigger async jobs (NON-BLOCKING) (~10ms)
+        asyncBookingService.sendBookingConfirmationEmail(savedBooking);
+        asyncBookingService.notifyAdminNewBooking(savedBooking);
+
+        log.info("Booking creation completed, async jobs triggered");
         log.info("Booking creation completed in ~{}ms", 200);
         return mapper.toResponse(savedBooking);
     }
@@ -444,7 +450,10 @@ public class BookingServiceImpl implements BookingService {
         slot.setIsBooked(false);
         slot.setBookingId(null);
         slotRepository.save(slot);
+        // Trigger async email
+        asyncBookingService.sendCancellationEmail(booking);
 
+        log.info("Booking cancelled: bookingId={}", booking.getBookingId());
         // Log activity
         logActivity(
                 booking,
