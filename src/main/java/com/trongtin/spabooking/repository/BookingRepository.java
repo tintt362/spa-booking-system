@@ -54,7 +54,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // kiem tat ca Booking cua ngay hom nay
     @Query("""
             SELECT b FROM Booking b 
-            WHERE s.bookingDate = :date
+            WHERE b.bookingDate = :date
             AND b.status IN ('PENDING', 'CONFIRMED')
             ORDER BY b.bookingTime
             """)
