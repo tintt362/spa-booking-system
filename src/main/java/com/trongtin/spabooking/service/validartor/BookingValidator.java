@@ -1,14 +1,16 @@
 package com.trongtin.spabooking.service.validartor;
 
 
-
 import com.trongtin.spabooking.contant.ErrorCode;
 import com.trongtin.spabooking.dto.request.*;
 import com.trongtin.spabooking.entity.*;
 import com.trongtin.spabooking.exception.BookingException;
 import com.trongtin.spabooking.repository.*;
+import com.trongtin.spabooking.service.SlotGenerationService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -23,6 +25,7 @@ public class BookingValidator {
     private final ServiceRepository serviceRepository;
     private final TherapistRepository therapistRepository;
     private final TherapistServiceRepository therapistServiceRepository;
+    private final SlotGenerationService slotGenerationService;
 
     /**
      * Validate anonymouse booking request
@@ -134,7 +137,7 @@ public class BookingValidator {
         }
     }
 
- // Validate cancellation
+    // Validate cancellation
     public void validateCancellation(LocalDate bookingDate, LocalTime bookingTime) {
         LocalDateTime bookingDateTime = LocalDateTime.of(bookingDate, bookingTime);
         LocalDateTime now = LocalDateTime.now();
@@ -146,6 +149,25 @@ public class BookingValidator {
                     ErrorCode.BOOK_011,
                     "Không thể hủy lịch trong vòng 2 giờ trước giờ hẹn"
             );
+        }
+    }
+
+
+    // Auto-generate slots for next 30 days
+    // Runs daily at 2 AM
+
+    @Scheduled(cron = "0 0 2 * * ?") // 2 AM daily
+    @Transactional
+    public void autoGenerateSlots() {
+        log.info("Running auto slot generation...");
+
+        try {
+            int slotsGenerated = slotGenerationService.generateSlotsForNextDays(30);
+
+            log.info("Auto slot generation completed: {} new slots", slotsGenerated);
+
+        } catch (Exception e) {
+            log.error("Error in auto slot generation: {}", e.getMessage(), e);
         }
     }
 }
