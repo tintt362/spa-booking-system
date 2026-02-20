@@ -43,6 +43,8 @@ public class BookingServiceImpl implements BookingService {
 
     private final AsyncBookingService asyncBookingService; // ADD THIS
 
+    private final LoyaltyService loyaltyService; // ADD THIS
+
     // Create anonymous booking
     @Override
     @Transactional
@@ -519,18 +521,30 @@ public class BookingServiceImpl implements BookingService {
         if (request.getAdminNote() != null) {
             booking.setAdminNote(request.getAdminNote());
         }
+        // Award points when booking is completed
+        if (newStatus == BookingStatus.COMPLETED &&
+                booking.getUser() != null) {
 
-        bookingRepository.save(booking);
+            // Award loyalty points
+            loyaltyService.awardPointsForBooking(
+                    booking.getUser().getId(),
+                    booking.getId(),
+                    booking.getFinalPrice()
+            );
 
-        // Log activity
-        logActivity(
-                booking,
-                "STATUS_CHANGED",
-                "ADMIN",
-                null,
-                String.format("Thay đổi: %s → %s", oldStatus, newStatus)
-        );
+            log.info("Loyalty points awarded for booking: {}", booking.getBookingId());
+            bookingRepository.save(booking);
 
-        log.info("Booking status updated: bookingId={}", booking.getBookingId());
+            // Log activity
+            logActivity(
+                    booking,
+                    "STATUS_CHANGED",
+                    "ADMIN",
+                    null,
+                    String.format("Thay đổi: %s → %s", oldStatus, newStatus)
+            );
+
+            log.info("Booking status updated: bookingId={}", booking.getBookingId());
+        }
     }
 }
