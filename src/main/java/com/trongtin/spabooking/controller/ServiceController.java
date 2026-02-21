@@ -26,10 +26,10 @@ public class ServiceController {
     private final BookingService bookingService;
     private final BookingMapper mapper;
 
-    /**
-     * GET /api/services
-     * Get all active services
-     */
+
+     //GET /api/services
+    // Get all active services
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServiceDTO>>> getAllServices() {
         List<Service> services = serviceRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
@@ -41,10 +41,10 @@ public class ServiceController {
         return ResponseEntity.ok(ApiResponse.success(dtos));
     }
 
-    /**
-     * GET /api/services/{id}
-     * Get service details
-     */
+
+     // GET /api/services/{id}
+     //Get service details
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ServiceDTO>> getService(@PathVariable Long id) {
         Service service = serviceRepository.findById(id)
@@ -53,10 +53,10 @@ public class ServiceController {
         return ResponseEntity.ok(ApiResponse.success(mapper.toServiceDTO(service)));
     }
 
-    /**
-     * GET /api/services/{id}/available-slots
-     * Get available time slots
-     */
+
+     //GET /api/services/{id}/available-slots
+     // Get available time slots
+
     @GetMapping("/{id}/available-slots")
     public ResponseEntity<ApiResponse<List<AvailableSlotDTO>>> getAvailableSlots(
             @PathVariable Long id,
