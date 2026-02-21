@@ -1,4 +1,8 @@
 package com.trongtin.spabooking.entity;
 
-public class RevenueGroupBy {
+
+public enum RevenueGroupBy {
+    DAILY,
+    WEEKLY,
+    MONTHLY
 }
