@@ -141,7 +141,6 @@ public class LoyaltyService {
     }
 
     ////     Get user's loyalty transactions
-
     @Transactional(readOnly = true)
     public Page<LoyaltyTransactionDTO> getTransactions(String email, Pageable pageable) {
         User user = userRepository.findActiveByEmail(email)
