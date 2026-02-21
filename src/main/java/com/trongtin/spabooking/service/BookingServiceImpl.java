@@ -18,7 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -546,5 +548,237 @@ public class BookingServiceImpl implements BookingService {
 
             log.info("Booking status updated: bookingId={}", booking.getBookingId());
         }
+    }/**
+     * Get booking detail for admin (with logs)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public BookingDetailDTO getBookingDetailForAdmin(Long id) {
+        log.info("Getting booking detail for admin: id={}", id);
+
+        Booking booking = bookingRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking"));
+
+        // Get activity logs
+        List<ActivityLog> logs = activityLogRepository
+                .findByBookingIdOrderByCreatedAtDesc(id);
+
+        List<ActivityLogDTO> logDTOs = logs.stream()
+                .map(this::mapActivityLogToDTO)
+                .collect(Collectors.toList());
+
+        // Get customer info
+        CustomerInfoDTO customerInfo = null;
+        if (booking.getUser() != null) {
+            customerInfo = getCustomerInfo(booking.getUser());
+        } else {
+            // Anonymous customer - get by phone
+            customerInfo = getAnonymousCustomerInfo(booking.getCustomerPhone());
+        }
+
+        return BookingDetailDTO.builder()
+                .booking(mapper.toResponse(booking))
+                .activityLogs(logDTOs)
+                .customerInfo(customerInfo)
+                .build();
+    }
+
+    /**
+     * Create booking by admin
+     */
+    @Override
+    @Transactional
+    public BookingResponse createBookingByAdmin(AdminCreateBookingRequest request) {
+        log.info("Admin creating booking for: {}", request.getCustomerPhone());
+
+        // Validate service
+        com.trongtin.spabooking.entity.Service service = serviceRepository.findById(request.getServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Service"));
+
+        // Validate therapist if provided
+        Therapist therapist = null;
+        if (request.getTherapistId() != null) {
+            therapist = therapistRepository.findById(request.getTherapistId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Therapist"));
+        }
+
+        // Parse time
+        LocalTime bookingTime = LocalTime.parse(request.getBookingTime());
+        LocalTime endTime = timeCalculator.calculateEndTime(
+                bookingTime,
+                service.getDurationMinutes()
+        );
+
+        // Lock slot
+        BookingSlot slot = slotRepository.findAvailableSlotForUpdate(
+                        request.getServiceId(),
+                        request.getTherapistId(),
+                        request.getBookingDate(),
+                        bookingTime
+                )
+                .orElseThrow(() -> new BookingException(
+                        ErrorCode.BOOK_005,
+                        "Khung giờ này đã được đặt"
+                ));
+
+        // Create booking
+        Booking booking = Booking.builder()
+                .bookingId(idGenerator.generate())
+                .customerName(request.getCustomerName())
+                .customerPhone(request.getCustomerPhone())
+                .customerEmail(request.getCustomerEmail())
+                .service(service)
+                .therapist(therapist)
+                .bookingDate(request.getBookingDate())
+                .bookingTime(bookingTime)
+                .endTime(endTime)
+                .isAnonymous(true)
+                .bookingSource(BookingSource.ADMIN)
+                .status(request.getAutoConfirm()
+                        ? BookingStatus.CONFIRMED
+                        : BookingStatus.PENDING)
+                .originalPrice(service.getPrice())
+                .discountAmount(BigDecimal.ZERO)
+                .finalPrice(service.getPrice())
+                .customerNote(request.getCustomerNote())
+                .adminNote(request.getAdminNote())
+                .build();
+
+        if (request.getPaymentMethod() != null) {
+            booking.setPaymentMethod(
+                    PaymentMethod.valueOf(request.getPaymentMethod())
+            );
+        }
+
+        if (request.getAutoConfirm()) {
+            booking.setConfirmedAt(LocalDateTime.now());
+        }
+
+        Booking saved = bookingRepository.save(booking);
+
+        // Mark slot as booked
+        slot.setIsBooked(true);
+        slot.setBookingId(saved.getId());
+        slotRepository.save(slot);
+
+        // Log activity
+        logActivity(
+                saved,
+                "BOOKING_CREATED_BY_ADMIN",
+                "ADMIN",
+                null,
+                "Admin tạo booking cho khách hàng"
+        );
+
+        // Send confirmation email
+        asyncBookingService.sendBookingConfirmationEmail(saved);
+
+        log.info("Admin created booking: bookingId={}", saved.getBookingId());
+        return mapper.toResponse(saved);
+    }
+
+    /**
+     * Export bookings to Excel (async)
+     */
+    @Override
+    public String exportBookingsToExcel(LocalDate startDate, LocalDate endDate) {
+        log.info("Exporting bookings: {} to {}", startDate, endDate);
+
+        // Default dates
+        if (startDate == null) {
+            startDate = LocalDate.now().minusMonths(1);
+        }
+        if (endDate == null) {
+            endDate = LocalDate.now();
+        }
+
+        // This would typically be done async and uploaded to S3
+        // For now, return a placeholder
+        String filename = String.format("bookings_%s_to_%s.xlsx",
+                startDate, endDate);
+
+        // TODO: Implement actual Excel generation
+        // Use Apache POI to create Excel file
+        // Upload to S3 or file storage
+        // Return download URL
+
+        return "https://storage.spa-booking.com/exports/" + filename;
+    }
+
+    /**
+     * Helper: Map activity log to DTO
+     */
+    private ActivityLogDTO mapActivityLogToDTO(ActivityLog log) {
+        return ActivityLogDTO.builder()
+                .id(log.getId())
+                .action(log.getAction())
+                .actorType(log.getActorType())
+                .actorName(log.getActorName())
+                .description(log.getDescription())
+                .oldValue(log.getOldValue())
+                .newValue(log.getNewValue())
+                .createdAt(log.getCreatedAt())
+                .build();
+    }
+
+    /**
+     * Helper: Get customer info (registered user)
+     */
+    private CustomerInfoDTO getCustomerInfo(User user) {
+        List<Booking> userBookings = bookingRepository
+                .findByUserIdOrderByCreatedAtDesc(user.getId());
+
+        long completed = userBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                .count();
+
+        long cancelled = userBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.CANCELLED)
+                .count();
+
+        BigDecimal totalSpent = userBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                .map(Booking::getFinalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return CustomerInfoDTO.builder()
+                .totalBookings((long) userBookings.size())
+                .completedBookings(completed)
+                .cancelledBookings(cancelled)
+                .totalSpent(totalSpent)
+                .loyaltyPoints(user.getLoyaltyPoints())
+                .membershipTier(user.getMembershipTier().name())
+                .build();
+    }
+
+    /**
+     * Helper: Get customer info (anonymous)
+     */
+    private CustomerInfoDTO getAnonymousCustomerInfo(String phone) {
+        List<Booking> phoneBookings = bookingRepository
+                .findByCustomerPhoneOrderByCreatedAtDesc(phone);
+
+        long completed = phoneBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                .count();
+
+        long cancelled = phoneBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.CANCELLED)
+                .count();
+
+        BigDecimal totalSpent = phoneBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                .map(Booking::getFinalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return CustomerInfoDTO.builder()
+                .totalBookings((long) phoneBookings.size())
+                .completedBookings(completed)
+                .cancelledBookings(cancelled)
+                .totalSpent(totalSpent)
+                .loyaltyPoints(0)
+                .membershipTier("NONE")
+                .build();
     }
 }
+
