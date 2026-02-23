@@ -1,11 +1,9 @@
 package com.trongtin.spabooking.service;
 
 
-import com.trongtin.spabooking.dto.request.AnonymousBookingRequest;
-import com.trongtin.spabooking.dto.request.CancelBookingRequest;
-import com.trongtin.spabooking.dto.request.UpdateBookingStatusRequest;
-import com.trongtin.spabooking.dto.request.UserBookingRequest;
+import com.trongtin.spabooking.dto.request.*;
 import com.trongtin.spabooking.dto.response.AvailableSlotDTO;
+import com.trongtin.spabooking.dto.response.BookingDetailDTO;
 import com.trongtin.spabooking.dto.response.BookingResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,4 +39,11 @@ public interface BookingService {
 
     // Get available slots
     List<AvailableSlotDTO> getAvailableSlots(Long serviceId, LocalDate date);
+
+
+    BookingDetailDTO getBookingDetailForAdmin(Long id);
+
+    BookingResponse createBookingByAdmin(AdminCreateBookingRequest adminCreateBookingRequest);
+
+    String exportBookingsToExcel(LocalDate startDate, LocalDate endDate);
 }

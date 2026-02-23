@@ -1,6 +1,5 @@
 package com.trongtin.spabooking.service;
 
-import com.trongtin.spabooking.dto.*;
 import com.trongtin.spabooking.dto.request.*;
 import com.trongtin.spabooking.dto.response.*;
 import com.trongtin.spabooking.entity.*;
@@ -33,9 +32,7 @@ public class UserService {
         return mapper.toUserDTO(user);
     }
 
-    /**
-     * Update profile
-     */
+    ///     Update profile
     @Transactional
     public UserDTO updateProfile(String email, UpdateProfileRequest request) {
         log.info("Updating profile for user: {}", email);
@@ -78,9 +75,7 @@ public class UserService {
         return mapper.toUserDTO(updated);
     }
 
-    /**
-     * Change password
-     */
+    //      Change password
     @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
         log.info("Changing password for user: {}", email);
