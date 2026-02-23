@@ -2,9 +2,9 @@ spring:
   application:
     name: spa-booking
   datasource:
-    url: jdbc:postgresql://localhost:5432/spa_booking
-    username: postgres
-    password: admin123
+    url: ${SPA_BOOKING_DB_URL}
+    username: ${SPA_BOOKING_DB_USERNAME}
+    password: ${SPA_BOOKING_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
 
@@ -21,8 +21,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: admin
-    password: admin123
+    username: ${SPA_BOOKING_MAIL_USERNAME}
+    password: ${SPA_BOOKING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -47,8 +47,32 @@ server:
 
 jwt:
   # Base64 secret (>= 32 bytes trước khi base64). Xem cách generate ở dưới.
-  secret: "eMraROprLsTj9bIAHBwaFaflunLrkLyhU1/wWeBWkTg="
+  secret:  ${SPA_BOOKING_JWT_SECRET}
   # 1 giờ = 3600000 ms
   expiration: 3600000
   # 7 ngày = 604800000 ms (optional)
   refresh-expiration: 604800000
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    displayRequestDuration: true
+    displayOperationId: false
+    filter: true
+    showExtensions: true
+    showCommonExtensions: true
+    tryItOutEnabled: true
+    persistAuthorization: true
+    syntaxHighlight:
+      theme: monokai
+  show-actuator: false
+  paths-to-match:
+    - /api/**
+  paths-to-exclude:
+    - /api/internal/**

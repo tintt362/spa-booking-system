@@ -7,6 +7,8 @@ import com.trongtin.spabooking.dto.response.ApiResponse;
 import com.trongtin.spabooking.dto.response.BookingDetailDTO;
 import com.trongtin.spabooking.dto.response.BookingResponse;
 import com.trongtin.spabooking.service.BookingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,6 +35,25 @@ public class AdminBookingController {
      // GET /api/admin/bookings
      //Get all bookings with filters
 
+    @Tag(name = "Admin - Bookings")
+    @Operation(
+            summary = "Get all bookings (paginated)",
+            description = """
+            Retrieve all bookings with filtering and pagination.
+            
+            **Filter Options:**
+            - status: Filter by booking status
+            - date: Filter by specific date
+            - phone: Search by customer phone
+            - serviceId: Filter by service
+            - therapistId: Filter by therapist
+            
+            **Pagination:**
+            - Default page size: 20
+            - Page is 0-indexed
+            - Sortable by any field
+            """
+    )
     @GetMapping
     public ResponseEntity<ApiResponse<Page<BookingResponse>>> getBookings(
             @RequestParam(required = false) String status,
@@ -64,6 +85,11 @@ public class AdminBookingController {
 
      //GET /api/admin/bookings/{id}
      // Get booking details with activity logs
+     @Tag(name = "Admin - Bookings")
+     @Operation(
+             summary = "Get booking detail",
+             description = "Get comprehensive booking information including history and logs"
+     )
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BookingDetailDTO>> getBookingDetail(
             @PathVariable Long id
@@ -76,6 +102,24 @@ public class AdminBookingController {
 
     // PUT /api/admin/bookings/{id}/status
    //  Update booking status
+    @Tag(name = "Admin - Bookings")
+    @Operation(
+            summary = "Update booking status",
+            description = """
+            Update booking status and related information.
+            
+            **Status Transitions:**
+            - PENDING → CONFIRMED: Approve booking
+            - CONFIRMED → COMPLETED: Mark as completed (award points)
+            - CONFIRMED → CANCELLED: Cancel booking
+            - CONFIRMED → NO_SHOW: Customer didn't show up
+            
+            **Additional Fields:**
+            - adminNote: Internal note (not visible to customer)
+            - paymentMethod: CASH, CARD, BANK_TRANSFER (required for COMPLETED)
+            - paymentStatus: PAID, UNPAID (required for COMPLETED)
+            """
+    )
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<String>> updateBookingStatus(
@@ -92,6 +136,23 @@ public class AdminBookingController {
 
      // POST /api/admin/bookings
    //  Create booking for customer (by admin)
+     @Tag(name = "Admin - Bookings")
+     @Operation(
+             summary = "Create booking by admin",
+             description = """
+            Create booking on behalf of customer (walk-in or phone booking).
+            
+            **Use Cases:**
+            - Walk-in customers
+            - Phone bookings
+            - VIP customers
+            
+            **Features:**
+            - Can auto-confirm (skip PENDING status)
+            - Can add admin notes
+            - Can specify payment method upfront
+            """
+     )
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<BookingResponse>> createBookingForCustomer(
