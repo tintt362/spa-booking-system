@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: spabooking-db
     environment:
-      POSTGRES_DB: spa_booking
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${SPA_BOOKING_DB_USERNAME}
+      POSTGRES_PASSWORD: ${SPA_BOOKING_DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -22,9 +22,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/spa_booking
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: admin123
+      SPRING_DATASOURCE_URL: ${SPA_BOOKING_DB_URL}
+      SPRING_DATASOURCE_USERNAME:  ${SPA_BOOKING_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPA_BOOKING_DB_PASSWORD}
       # nếu bạn dùng Hibernate:
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_HIBERNATE_DDL_AUTO: update

@@ -5,6 +5,8 @@ import com.trongtin.spabooking.dto.request.AdjustPointsRequest;
 import com.trongtin.spabooking.dto.response.*;
 import com.trongtin.spabooking.dto.response.UserDTO;
 import com.trongtin.spabooking.service.AdminUserManagementService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +27,19 @@ public class AdminUserController {
 
      //GET /api/admin/users
      //Get all users with pagination
+     @Tag(name = "Admin - Users")
+     @Operation(
+             summary = "Get all users (paginated)",
+             description = """
+            Retrieve all users with filtering.
+            
+            **Filter Options:**
+            - tier: Filter by membership tier
+            - search: Search by name, email, or phone
+            - verified: Filter by verification status
+            - active: Filter by active status
+            """
+     )
     @GetMapping
     public ResponseEntity<ApiResponse<Page<UserDTO>>> getUsers(
             @RequestParam(required = false) String search,
@@ -51,6 +66,8 @@ public class AdminUserController {
 
      // GET /api/admin/users/{id}
      // Get user details
+     @Tag(name = "Admin - Users")
+     @Operation(summary = "Get user detail with booking history")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserDetailDTO>> getUserDetail(@PathVariable Long id) {
         UserDetailDTO detail = userManagementService.getUserDetail(id);
@@ -61,6 +78,11 @@ public class AdminUserController {
 
      // PUT /api/admin/users/{id}/verify
      // Manually verify user
+     @Tag(name = "Admin - Users")
+     @Operation(
+             summary = "Verify user manually",
+             description = "Manually verify user email (bypass email verification)"
+     )
     @PutMapping("/{id}/verify")
     public ResponseEntity<ApiResponse<String>> verifyUser(@PathVariable Long id) {
         userManagementService.verifyUser(id);
@@ -86,7 +108,19 @@ public class AdminUserController {
 
      //PUT /api/admin/users/{id}/activate
      // Activate user account
-
+     @Tag(name = "Admin - Users")
+     @Operation(
+             summary = "Get all users (paginated)",
+             description = """
+            Retrieve all users with filtering.
+            
+            **Filter Options:**
+            - tier: Filter by membership tier
+            - search: Search by name, email, or phone
+            - verified: Filter by verification status
+            - active: Filter by active status
+            """
+     )
     @PutMapping("/{id}/activate")
     public ResponseEntity<ApiResponse<String>> activateUser(@PathVariable Long id) {
         userManagementService.activateUser(id);

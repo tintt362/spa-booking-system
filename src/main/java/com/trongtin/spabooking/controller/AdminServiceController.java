@@ -5,6 +5,8 @@ import com.trongtin.spabooking.dto.request.UpdateServiceRequest;
 import com.trongtin.spabooking.dto.response.ApiResponse;
 import com.trongtin.spabooking.dto.response.ServiceDTO;
 import com.trongtin.spabooking.service.AdminServiceManagementService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,11 @@ public class AdminServiceController {
 
      //GET /api/admin/services
      // Get all services (including inactive)
+     @Tag(name = "Admin - Services")
+     @Operation(
+             summary = "Get all services (including inactive)",
+             description = "Admin view of all services with option to include inactive ones"
+     )
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServiceDTO>>> getAllServices(
             @RequestParam(required = false) Boolean includeInactive
@@ -39,6 +46,8 @@ public class AdminServiceController {
 
      // POST /api/admin/services
      // Create new service
+     @Tag(name = "Admin - Services")
+     @Operation(summary = "Create new service")
     @PostMapping
     public ResponseEntity<ApiResponse<ServiceDTO>> createService(
             @Valid @RequestBody CreateServiceRequest request
@@ -53,6 +62,8 @@ public class AdminServiceController {
 
       // PUT /api/admin/services/{id}
      // Update service
+      @Tag(name = "Admin - Services")
+      @Operation(summary = "Update service")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ServiceDTO>> updateService(
             @PathVariable Long id,
@@ -68,6 +79,11 @@ public class AdminServiceController {
 
      // DELETE /api/admin/services/{id}
     // Soft delete service
+     @Tag(name = "Admin - Services")
+     @Operation(
+             summary = "Deactivate service",
+             description = "Soft delete - service becomes inactive but data is preserved"
+     )
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> deleteService(@PathVariable Long id) {
         serviceManagementService.deleteService(id);

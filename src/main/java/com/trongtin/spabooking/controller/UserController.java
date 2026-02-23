@@ -5,6 +5,10 @@ import com.trongtin.spabooking.dto.response.ApiResponse;
 import com.trongtin.spabooking.dto.response.*;
 import com.trongtin.spabooking.service.BookingService;
 import com.trongtin.spabooking.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -87,6 +91,16 @@ public class UserController {
 
     //GET /api/user/bookings
      // Get user's bookings
+    @Tag(name = "Bookings - User")
+    @Operation(
+            summary = "Get my bookings",
+            description = "Retrieve all bookings for the authenticated user",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bookings retrieved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     @GetMapping("/bookings")
     public ResponseEntity<ApiResponse<List<BookingResponse>>> getBookings(
             @AuthenticationPrincipal UserDetails userDetails
@@ -101,6 +115,17 @@ public class UserController {
 
       //GET /api/user/bookings/{id}
      // Get booking details
+
+    @Tag(name = "Bookings - User")
+    @Operation(
+            summary = "Get my bookings",
+            description = "Retrieve all bookings for the authenticated user",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bookings retrieved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     @GetMapping("/bookings/{id}")
     public ResponseEntity<ApiResponse<BookingResponse>> getBooking(
             @PathVariable Long id
@@ -113,6 +138,25 @@ public class UserController {
 
      // PUT /api/user/bookings/{id}/cancel
      // Cancel booking
+     @Tag(name = "Bookings - User")
+     @Operation(
+             summary = "Cancel booking",
+             description = """
+            Cancel a booking. Points are refunded if applicable.
+            
+            **Cancellation Policy:**
+            - Must cancel at least 2 hours before booking time
+            - Cannot cancel COMPLETED or NO_SHOW bookings
+            - Refund processed within 24 hours for paid bookings
+            """,
+             security = @SecurityRequirement(name = "Bearer Authentication")
+     )
+     @ApiResponses(value = {
+             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Booking cancelled successfully"),
+             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Cannot cancel (too late, already completed, etc.)"),
+             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Not authorized to cancel this booking"),
+             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Booking not found")
+     })
     @PutMapping("/bookings/{id}/cancel")
     public ResponseEntity<ApiResponse<String>> cancelBooking(
             @AuthenticationPrincipal UserDetails userDetails,
