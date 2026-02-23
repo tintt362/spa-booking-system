@@ -8,23 +8,33 @@ spring:
     driver-class-name: org.postgresql.Driver
 
 
-
   jpa:
     hibernate:
-      ddl-auto: create     # hoặc: none | validate | create | create-drop
+      ddl-auto: update     # hoặc: none | validate | create | create-drop
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: admin
+    password: admin123
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   # (Tùy chọn) Logging SQL rõ hơn trong console
   logging:
     level:
       org.hibernate.SQL: DEBUG
       org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-  Nội dung trong hình bạn gửi:
 
   # Dùng để trỏ tới thư mục chứa các script Flyway
   flyway:
@@ -34,3 +44,11 @@ spring:
     baseline-version: 0
 server:
   port: 8080
+
+jwt:
+  # Base64 secret (>= 32 bytes trước khi base64). Xem cách generate ở dưới.
+  secret: "eMraROprLsTj9bIAHBwaFaflunLrkLyhU1/wWeBWkTg="
+  # 1 giờ = 3600000 ms
+  expiration: 3600000
+  # 7 ngày = 604800000 ms (optional)
+  refresh-expiration: 604800000
