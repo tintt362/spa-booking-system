@@ -13,6 +13,7 @@ import com.trongtin.spabooking.service.validartor.*;
 import com.trongtin.spabooking.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,10 @@ public class BookingServiceImpl implements BookingService {
     // Create anonymous booking
     @Override
     @Transactional
+    @CacheEvict(
+            value = "availableSlots",
+            key = "'service:' + #booking.serviceId + ':date:' + #booking.bookingDate"
+    )
     public BookingResponse createAnonymousBooking(AnonymousBookingRequest request) {
         log.info("Creating anonymous booking for phone: {}", request.getCustomerPhone());
 
@@ -141,17 +146,19 @@ public class BookingServiceImpl implements BookingService {
     }
 
 
-    //Get available slots for a service on a specific date
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "availableSlots",
+            key = "'service:' + #serviceId + ':date:' + #date",
+            unless = "#result.isEmpty()"
+    )
     public List<AvailableSlotDTO> getAvailableSlots(Long serviceId, LocalDate date) {
-        log.info("Getting available slots: serviceId={}, date={}", serviceId, date);
+        log.info("Cache MISS - querying DB: serviceId={}, date={}", serviceId, date);
 
-        // Validate service exists
         com.trongtin.spabooking.entity.Service service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Service"));
 
-        // Get available slots
         List<BookingSlot> slots = slotRepository.findAvailableSlots(serviceId, date);
 
         return slots.stream()
@@ -165,7 +172,6 @@ public class BookingServiceImpl implements BookingService {
                         .build())
                 .collect(Collectors.toList());
     }
-
     /**
      * Helper: Log activity
      */
@@ -190,6 +196,10 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = "availableSlots",
+            key = "'service:' + #booking.serviceId + ':date:' + #booking.bookingDate"
+    )
     public BookingResponse createUserBooking(UserBookingRequest request, String email) {
         log.info("Creating user booking for email: {}", email);
 
@@ -588,6 +598,10 @@ public class BookingServiceImpl implements BookingService {
      */
     @Override
     @Transactional
+    @CacheEvict(
+            value = "availableSlots",
+            key = "'service:' + #booking.serviceId + ':date:' + #booking.bookingDate"
+    )
     public BookingResponse createBookingByAdmin(AdminCreateBookingRequest request) {
         log.info("Admin creating booking for: {}", request.getCustomerPhone());
 

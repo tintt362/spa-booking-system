@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -35,7 +36,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final BookingMapper mapper;
     private final AsyncBookingService asyncService;
-
+    private final TokenBlacklistService blacklistToken;
     //Register new user
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -242,5 +243,15 @@ public class AuthService {
     private void sendVerificationEmail(User user, String token) {
         // Async implementation will be added
         log.info("TODO: Send verification email to {}", user.getEmail());
+    }
+
+    public void logout(String token) {
+        Date expiration = jwtService.extractExpiration(token);
+
+        long ttl = expiration.getTime() - System.currentTimeMillis();
+        log.warn("TTL: " + ttl);
+        if (ttl > 0) {
+            String jti = jwtService.extractJti(token);
+            blacklistToken.blacklistToken(jti, ttl);        }
     }
 }
