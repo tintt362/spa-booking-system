@@ -8,6 +8,7 @@ import com.trongtin.spabooking.exception.ResourceNotFoundException;
 import com.trongtin.spabooking.mapper.BookingMapper;
 import com.trongtin.spabooking.repository.*;
 import com.trongtin.spabooking.service.BookingService;
+import com.trongtin.spabooking.service.ServiceCacheService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -29,6 +30,7 @@ public class ServiceController {
     private final ServiceRepository serviceRepository;
     private final BookingService bookingService;
     private final BookingMapper mapper;
+    private final ServiceCacheService serviceCacheService;
 
 
      //GET /api/services
@@ -85,11 +87,22 @@ public class ServiceController {
      })
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServiceDTO>>> getAllServices() {
-        List<Service> services = serviceRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
 
-        List<ServiceDTO> dtos = services.stream()
-                .map(mapper::toServiceDTO)
-                .collect(Collectors.toList());
+         // 1. Try cache
+         List<ServiceDTO> cached = serviceCacheService.getAll();
+         if (cached != null) {
+             return ResponseEntity.ok(ApiResponse.success(cached));
+         }
+
+         // 2. DB
+         List<Service> services = serviceRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
+         List<ServiceDTO> dtos = services.stream()
+                 .map(mapper::toServiceDTO)
+                 .collect(Collectors.toList());
+         // 3. Set cache
+         serviceCacheService.setAll(dtos);
+
+
 
         return ResponseEntity.ok(ApiResponse.success(dtos));
     }
@@ -107,9 +120,20 @@ public class ServiceController {
      })
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ServiceDTO>> getService(@PathVariable Long id) {
-        Service service = serviceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Service"));
+         // 1. Cache
+         ServiceDTO cached = serviceCacheService.getById(id);
+         if (cached != null) {
+             return ResponseEntity.ok(ApiResponse.success(cached));
+         }
 
+         // 2. DB
+         Service service = serviceRepository.findById(id)
+                 .orElseThrow(() -> new ResourceNotFoundException("Service"));
+
+         ServiceDTO dto = mapper.toServiceDTO(service);
+
+         // 3. Cache
+         serviceCacheService.setById(id, dto);
         return ResponseEntity.ok(ApiResponse.success(mapper.toServiceDTO(service)));
     }
 
