@@ -7,15 +7,15 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
-public interface TherapistRepository extends JpaRepository<Therapist, Long> {
+    @Repository
+    public interface TherapistRepository extends JpaRepository<Therapist, Long> {
 
-    // kiem tat ca Therapist active = true
-    List<Therapist> findByIsActiveTrue();
+        // kiem tat ca Therapist active = true
+        List<Therapist> findByIsActiveTrue();
 
-    // kiem tat ca Employee voi code
-    Optional<Therapist> findByEmployeeCode(String code);
+        // kiem tat ca Employee voi code
+        Optional<Therapist> findByEmployeeCode(String code);
 
-    // kiem tat ca Therapist bang email
-    Optional<Therapist> findByEmail(String email);
-}
+        // kiem tat ca Therapist bang email
+        Optional<Therapist> findByEmail(String email);
+    }

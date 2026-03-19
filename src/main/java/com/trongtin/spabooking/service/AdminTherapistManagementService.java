@@ -22,23 +22,32 @@ public class AdminTherapistManagementService {
     private final ServiceRepository serviceRepository;
     private final TherapistServiceRepository therapistServiceRepository;
     private final BookingMapper mapper;
+    private final TherapistCacheService therapistCacheService;
 
     /**
      * Get all therapists
      */
     @Transactional(readOnly = true)
     public List<TherapistDTO> getAllTherapists(boolean includeInactive) {
-        List<Therapist> therapists;
 
-        if (includeInactive) {
-            therapists = therapistRepository.findAll();
-        } else {
-            therapists = therapistRepository.findByIsActiveTrue();
+        if (!includeInactive) {
+            List<TherapistDTO> cached = therapistCacheService.getAll();
+            if (cached != null) return cached;
         }
 
-        return therapists.stream()
+        List<Therapist> therapists = includeInactive
+                ? therapistRepository.findAll()
+                : therapistRepository.findByIsActiveTrue();
+
+        List<TherapistDTO> result = therapists.stream()
                 .map(mapper::toTherapistDTO)
                 .collect(Collectors.toList());
+
+        if (!includeInactive) {
+            therapistCacheService.setAll(result);
+        }
+
+        return result;
     }
 
     /**

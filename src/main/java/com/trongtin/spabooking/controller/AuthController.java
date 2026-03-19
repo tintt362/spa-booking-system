@@ -181,5 +181,16 @@ public class AuthController {
                 com.trongtin.spabooking.dto.response.ApiResponse.success(response)
         );
     }
+    @PostMapping("/logout")
+    public ResponseEntity<com.trongtin.spabooking.dto.response.ApiResponse<String>> logout(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        String token = authHeader.substring(7);
+        authService.logout(token);
+
+        return ResponseEntity.ok(
+                com.trongtin.spabooking.dto.response.ApiResponse.success("Logout thành công")
+        );
+    }
 
 }

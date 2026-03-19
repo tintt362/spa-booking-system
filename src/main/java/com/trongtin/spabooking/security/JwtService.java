@@ -1,9 +1,11 @@
 package com.trongtin.spabooking.security;
 
+import com.trongtin.spabooking.service.TokenBlacklistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,10 +15,12 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class JwtService {
 
     @Value("${jwt.secret}")
@@ -26,11 +30,13 @@ public class JwtService {
     private long jwtExpiration;
 
     private static final long REFRESH_TOKEN_EXPIRATION = 604800000; // 7 days
-
+    private final TokenBlacklistService blacklistService;
 
      //Generate JWT token
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        String jti = UUID.randomUUID().toString();
+        claims.put("jti",jti);
         return createToken(claims, userDetails.getUsername(), jwtExpiration);
     }
 
@@ -46,7 +52,9 @@ public class JwtService {
         return createToken(claims, userDetails.getUsername(), REFRESH_TOKEN_EXPIRATION);
     }
 
-
+    public String extractJti(String token) {
+        return extractClaim(token, claims -> claims.get("jti", String.class));
+    }
      //Create token
     private String createToken(
             Map<String, Object> claims,
@@ -108,15 +116,22 @@ public class JwtService {
     }
 
 
-     // Validate token
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
+
 
 
      // Get expiration time in milliseconds
     public long getExpirationTime() {
         return jwtExpiration;
     }
+
+
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        String jti = extractJti(token);
+
+        return (username.equals(userDetails.getUsername())
+                && !isTokenExpired(token)
+                && !blacklistService.isBlacklisted(jti));
+    }
+
 }
